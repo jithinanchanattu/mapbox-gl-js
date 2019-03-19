@@ -17,7 +17,7 @@ import type { FeatureState } from '../style-spec/expression';
 import type {Bucket} from '../data/bucket';
 import type Point from '@mapbox/point-geometry';
 import type {FeatureFilter} from '../style-spec/feature_filter';
-import type {TransitionParameters} from './properties';
+import type {TransitionParameters, PropertyValue} from './properties';
 import type EvaluationParameters, {CrossfadeParameters} from './evaluation_parameters';
 import type Transform from '../geo/transform';
 import type {
@@ -157,16 +157,24 @@ class StyleLayer extends Evented {
             const prop = this._transitionablePaint._values[name];
             const newCrossFadedValue = prop.property.specification["property-type"] === 'cross-faded-data-driven' && !prop.value.value && value;
 
-            const wasDataDriven = this._transitionablePaint._values[name].value.isDataDriven();
+            const oldValue = this._transitionablePaint._values[name].value;
+            const wasDataDriven = oldValue.isDataDriven();
             this._transitionablePaint.setValue(name, value);
-            const isDataDriven = this._transitionablePaint._values[name].value.isDataDriven();
+            const newValue = this._transitionablePaint._values[name].value;
+            const isDataDriven = newValue.isDataDriven();
             this._handleSpecialPaintPropertyUpdate(name);
-            return isDataDriven || wasDataDriven || newCrossFadedValue;
+            return isDataDriven || wasDataDriven || newCrossFadedValue || this._handleOverridablePaintPropertyUpdate(name, oldValue, newValue);
         }
     }
 
     _handleSpecialPaintPropertyUpdate(_: string) {
         // No-op; can be overridden by derived classes.
+    }
+
+    // eslint-disable-next-line no-unused-vars
+    _handleOverridablePaintPropertyUpdate<T, R>(name: string, oldValue: PropertyValue<T, R>, newValue: PropertyValue<T, R>): boolean {
+        // No-op; can be overridden by derived classes.
+        return false;
     }
 
     isHidden(zoom: number) {
